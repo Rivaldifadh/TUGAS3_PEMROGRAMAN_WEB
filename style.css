@@ -1,0 +1,200 @@
+:root {
+  --safe: #198754;
+  --warn: #fd7e14;
+  --danger: #dc3545;
+}
+
+/* =============================
+   GLOBAL STYLE
+============================= */
+body {
+  padding: 20px;
+  background: linear-gradient(100deg, #99ffec, #63b1e6);
+  font-family: "Poppins", sans-serif;
+}
+
+/* =============================
+   MODAL
+============================= */
+.modal-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+}
+
+.modal-card {
+  background: #ffffff;
+  padding: 25px 30px;
+  border-radius: 12px;
+  width: 700px;
+  height: 450px; /* Ukuran disamakan */
+  max-width: 80%;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  animation: fadeIn 0.25s ease;
+}
+
+/* Animasi muncul modal */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* =============================
+   FORM GROUP
+============================= */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.modal-card .form-label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  display: block;
+}
+
+.modal-card input,
+.modal-card select,
+.modal-card textarea {
+  width: 100%;
+  border: 1px solid #ced4da;
+  border-radius: 6px;
+  padding: 4px 10px;
+  font-size: 15px;
+  height: 25px;
+  transition: all 0.15s ease-in-out;
+}
+
+.modal-card input:focus,
+.modal-card select:focus,
+.modal-card textarea:focus {
+  border-color: #0d6efd;
+  box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+  outline: none;
+}
+
+/* Tombol modal */
+.modal-footer-btn {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+/* =============================
+   STATUS BADGE & TOOLTIP
+============================= */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tooltip-preview {
+  position: absolute;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid #ccc;
+  padding: 8px;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  max-width: 260px;
+}
+
+/* =============================
+   TABLE & PROGRESS AREA
+============================= */
+.table-wrap {
+  overflow: auto;
+  max-height: 55vh;
+  border-radius: 6px;
+}
+
+.progress-list {
+  max-height: 130px;
+  overflow-y: auto;
+  margin-top: 10px;
+  border: 1px solid #ced4da;
+  padding: 8px;
+  border-radius: 6px;
+  background: #f8f9fa;
+}
+
+/* Form Input */
+.modal-card input,
+.modal-card select,
+.modal-card textarea {
+  margin-bottom: 10px;
+  width: 100%;
+}
+
+/* ===========================
+   RESPONSIVE MEDIA QUERY
+   =========================== */
+@media (max-width: 992px) {
+  .modal-card {
+    width: 90%;
+    padding: 20px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr; /* Ubah jadi 1 kolom */
+    gap: 10px;
+  }
+
+  .modal-footer-btn {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .table-wrap {
+    max-height: 50vh;
+  }
+}
+
+@media (max-width: 576px) {
+  body {
+    padding: 10px;
+  }
+
+  h2 {
+    font-size: 18px;
+  }
+
+  .modal-card {
+    width: 100%;
+    padding: 15px;
+  }
+
+  .form-label {
+    font-size: 13px;
+  }
+
+  input,
+  select,
+  textarea {
+    font-size: 13px;
+  }
+
+  .btn {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+}

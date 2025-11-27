@@ -1,0 +1,71 @@
+{
+  "stocks": [
+    {
+      "kode": "EKMA4116",
+      "judul": "Pengantar Manajemen",
+      "kategori": "MK Wajib",
+      "upbjj": "Jakarta",
+      "lokasiRak": "R1-A3",
+      "harga": 65000,
+      "qty": 28,
+      "safety": 20,
+      "catatanHTML": "<em>Edisi 2024, cetak ulang</em>"
+    },
+    {
+      "kode": "EKMA4115",
+      "judul": "Pengantar Akuntansi",
+      "kategori": "MK Wajib",
+      "upbjj": "Jakarta",
+      "lokasiRak": "R1-A4",
+      "harga": 60000,
+      "qty": 7,
+      "safety": 15,
+      "catatanHTML": "<strong>Cover baru</strong>"
+    },
+    {
+      "kode": "BIOL4201",
+      "judul": "Biologi Umum (Praktikum)",
+      "kategori": "Praktikum",
+      "upbjj": "Surabaya",
+      "lokasiRak": "R3-B2",
+      "harga": 80000,
+      "qty": 12,
+      "safety": 10,
+      "catatanHTML": "Butuh <u>pendingin</u> untuk kit basah"
+    },
+    {
+      "kode": "FISIP4001",
+      "judul": "Dasar-Dasar Sosiologi",
+      "kategori": "MK Pilihan",
+      "upbjj": "Makassar",
+      "lokasiRak": "R2-C1",
+      "harga": 55000,
+      "qty": 2,
+      "safety": 8,
+      "catatanHTML": "Stok <i>menipis</i>, prioritaskan reorder"
+    }
+  ],
+  "do": [
+    {
+      "nomor": "DO2025-0001",
+      "nim": "123456789",
+      "nama": "Rina Wulandari",
+      "ekspedisi": "JNE",
+      "tanggalKirim": "2025-08-25",
+      "totalHarga": 120000,
+      "progress": [
+        {
+          "time": "2025-08-25 10:12:20",
+          "keterangan": "Penerimaan di Loket: TANGSEL"
+        }
+      ],
+      "open": false,
+      "newProgress": ""
+    }
+  ],
+  "pengirimanList": [
+    { "nama": "JNE Reguler" },
+    { "nama": "JNE Expres" },
+    { "nama": "J&T" }
+  ]
+}
