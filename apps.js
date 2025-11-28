@@ -4,6 +4,7 @@ const { createApp, ref, reactive, computed } = Vue;
 createApp({
   setup() {
     const tab = ref("stok");
+    const doDetail = reactive({ visible: false, index: null });
 
     // Main Data
     const stockData = ref([]);
@@ -47,6 +48,11 @@ createApp({
       return arr;
     });
 
+    function openDODetail(i) {
+      doDetail.visible = true;
+      doDetail.index = i;
+    }
+
     function resetStockFilters() {
       filters.upbjj = "";
       filters.kategori = "";
@@ -81,7 +87,7 @@ createApp({
       return "Rp " + Number(v).toLocaleString("id-ID");
     }
 
-    // ========= MODAL STOCK =========
+    // ========= FORM STOKNYA =========
     const stockForm = reactive({ visible: false, editIndex: null, data: {} });
     const deleteConfirm = reactive({ visible: false, index: null });
 
@@ -202,13 +208,22 @@ createApp({
     }
 
     function confirmDeleteDO(i) {
-      deleteDOConfirm.visible = true;
-      deleteDOConfirm.index = i;
+      deleteDOConfirm.visible = true; // tampilkan modal
+      deleteDOConfirm.index = i; // simpan index baris yang dipilih
     }
 
     function deleteDOConfirmed() {
       doList.value.splice(deleteDOConfirm.index, 1);
       deleteDOConfirm.visible = false;
+    }
+
+
+
+    function resetDOFilters() {
+      filters.upbjj = "";
+      filters.kategori = "";
+      filters.special = "";
+      sortBy.value = "";
     }
 
     function formatDate(d) {
@@ -231,6 +246,8 @@ createApp({
       sortBy,
       stockForm,
       deleteConfirm,
+      doDetail,
+      openDODetail,
       openCreateStock,
       openEditStock,
       closeStockForm,
