@@ -13,7 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css" />
 
     <!-- BOOTSTRAP CDN -->
     <link
@@ -323,18 +323,28 @@
                   </ul>
                 </td>
                 <td>
-                  <button
-                    class="btn btn-sm btn-outline-success me-1"
-                    @click="openDO(i)"
-                  >
+                  <button @click="openDODetail(i)" class="btn btn-info btn-sm">
                     Detail
                   </button>
-                  <button
-                    class="btn btn-sm btn-outline-danger"
-                    @click="confirmDeleteDO(i)"
-                  >
-                    Delete
-                  </button>
+
+                  <!-- <div v-if="deleteDOConfirm.visible" class="modal-overlay">
+                    <div class="modal-body">
+                      <h4>Konfirmasi Hapus</h4>
+                      <p>Yakin ingin menghapus Delivery Order ini?</p>
+
+                      <button class="btn btn-danger" @click="confirmDeleteDO(i)"
+">
+                        Hapus Sekarang
+                      </button>
+
+                      <button
+                        class="btn btn-secondary"
+                        @click="deleteDOConfirm.visible = true"
+                      >
+                        Batal
+                      </button> -->
+                    </div>
+                  </div>
                 </td>
               </tr>
               <tr v-if="filteredDOs.length===0">
@@ -420,6 +430,43 @@
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+        <!-- ========== MODAL DETAIL DO ========== -->
+        <div v-if="doDetail.visible" class="modal-overlay">
+          <div class="modal-box">
+            <h3>Detail DO: {{ doList[doDetail.index].nomor }}</h3>
+            <p><strong>Nama:</strong> {{ doList[doDetail.index].nama }}</p>
+            <p><strong>NIM:</strong> {{ doList[doDetail.index].nim }}</p>
+            <p>
+              <strong>Ekspedisi:</strong> {{ doList[doDetail.index].ekspedisi }}
+            </p>
+            <p>
+              <strong>Tanggal Kirim:</strong> {{
+              formatDate(doList[doDetail.index].tanggalKirim) }}
+            </p>
+
+            <hr />
+
+            <h4>Riwayat Progress</h4>
+            <ul class="progress-list">
+              <li v-for="p in doList[doDetail.index].progress">
+                {{ formatDateTime(p.time) }} - {{ p.keterangan }}
+              </li>
+            </ul>
+
+            <input
+              v-model="doList[doDetail.index].newProgress"
+              placeholder="Tulis update progres..."
+              class="input"
+            />
+            <button @click="addProgress(doDetail.index)" class="btn">
+              Tambah Progress
+            </button>
+
+            <button @click="doDetail.visible = false" class="btn-cancel">
+              Tutup
+            </button>
           </div>
         </div>
       </section>
