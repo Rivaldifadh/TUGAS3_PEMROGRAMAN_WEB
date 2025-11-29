@@ -23,6 +23,13 @@
   </head>
 
   <body>
+    <!-- NAVBAR -->
+    <nav class="navbar">
+      <!-- <span id="welcomeUser"></span> -->
+      <b id="welcomeUser"></b>
+      <button onclick="logout()">Logout</button>
+    </nav>
+
     <div id="app" class="container">
       <h2 class="mb-4 fw-bold">📦 Manajemen Stok Bahan Ajar & Tracking DO</h2>
 
@@ -326,20 +333,20 @@
                   <button @click="openDODetail(i)" class="btn btn-info btn-sm">
                     Detail
                   </button>
-
-                  <!-- <div v-if="deleteDOConfirm.visible" class="modal-overlay">
+<!-- 
+                  <div v-if="deleteDOConfirm.visible" class="modal-overlay">
                     <div class="modal-body">
                       <h4>Konfirmasi Hapus</h4>
                       <p>Yakin ingin menghapus Delivery Order ini?</p>
 
-                      <button class="btn btn-danger" @click="confirmDeleteDO(i)"
+                      <button class="btn btn-danger" @click="confirmDeletedo(i)"
 ">
                         Hapus Sekarang
                       </button>
 
                       <button
                         class="btn btn-secondary"
-                        @click="deleteDOConfirm.visible = true"
+                        @click="deletedoConfirm.visible = true"
                       >
                         Batal
                       </button> -->
@@ -357,123 +364,119 @@
         </div>
 
         <!-- ==== MODAL TAMBAH DO ==== -->
-        <div v-if="doForm.visible" class="modal-panel">
-          <div class="card modal-card p-4">
-            <h5 class="mb-3">Tambah DO</h5>
-            <form @submit.prevent="saveDO" class="small-form">
-              <div class="mb-2">
-                <label class="form-label">Nomor DO</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="doForm.data.nomor"
-                  readonly
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label">NIM</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="doForm.data.nim"
-                  required
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label">Nama</label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="doForm.data.nama"
-                  required
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label">Ekspedisi</label>
-                <select
-                  class="form-select"
-                  v-model="doForm.data.ekspedisi"
-                  required
-                >
-                  <option value="">--Pilih--</option>
-                  <option v-for="e in ekspedisiOptions" :key="e" :value="e">
-                    {{ e }}
-                  </option>
-                </select>
-              </div>
-              <div class="mb-2">
-                <label class="form-label">Tanggal Kirim</label>
-                <input
-                  type="date"
-                  class="form-control"
-                  v-model="doForm.data.tanggalKirimRaw"
-                />
-              </div>
-              <div class="mb-2">
-                <label class="form-label">Total Harga</label>
-                <input
-                  type="number"
-                  class="form-control"
-                  v-model.number="doForm.data.totalHarga"
-                />
-              </div>
-              <div class="d-flex justify-content-end mt-3">
-                <button type="submit" class="btn btn-success me-2">
-                  Simpan
-                </button>
-                <button
-                  type="button"
-                  class="btn btn-secondary"
-                  @click="closeDOForm"
-                >
-                  Batal
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-        <!-- ========== MODAL DETAIL DO ========== -->
-        <div v-if="doDetail.visible" class="modal-overlay">
-          <div class="modal-box">
-            <h3>Detail DO: {{ doList[doDetail.index].nomor }}</h3>
-            <p><strong>Nama:</strong> {{ doList[doDetail.index].nama }}</p>
-            <p><strong>NIM:</strong> {{ doList[doDetail.index].nim }}</p>
-            <p>
-              <strong>Ekspedisi:</strong> {{ doList[doDetail.index].ekspedisi }}
-            </p>
-            <p>
-              <strong>Tanggal Kirim:</strong> {{
-              formatDate(doList[doDetail.index].tanggalKirim) }}
-            </p>
+        <!-- ==== MODAL TAMBAH DO ==== -->
+<div v-if="doForm.visible" class="modal-panel">
+  <div class="card modal-card p-4">
+    <h5 class="mb-3">Tambah DO</h5>
+    <form @submit.prevent="saveDO" class="small-form">
+      <div class="mb-2">
+        <label class="form-label">Nomor DO</label>
 
-            <hr />
+  <input
+  v-model="doList[doDetail.index].newProgress"
+  placeholder="Tulis update progres..."
+  class="input"
+  />
 
-            <h4>Riwayat Progress</h4>
-            <ul class="progress-list">
-              <li v-for="p in doList[doDetail.index].progress">
-                {{ formatDateTime(p.time) }} - {{ p.keterangan }}
-              </li>
-            </ul>
+  <!-- EVENT KEYBOARD -->
+  @keyup.enter="addProgress(doDetail.index)"
+  @keyup.esc="doList[doDetail.index].newProgress = ''"
+/>
+<button @click="addProgress(doDetail.index)" class="btn">
+  Tambah Progress
+</button>
 
-            <input
-              v-model="doList[doDetail.index].newProgress"
-              placeholder="Tulis update progres..."
-              class="input"
-            />
-            <button @click="addProgress(doDetail.index)" class="btn">
-              Tambah Progress
-            </button>
+/>
+<button @click="addProgress(doDetail.index)" class="btn">
+  Tambah Progress
+</button>
 
-            <button @click="doDetail.visible = false" class="btn-cancel">
-              Tutup
-            </button>
-          </div>
-        </div>
+        <input
+          type="text"
+          class="form-control"
+          v-model="doForm.data.nomor"
+          readonly
+        />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">NIM</label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="doForm.data.nim"
+          required
+
+          <!-- SISIPAN EVENT -->
+          @keyup.enter="saveDO"
+          @keyup.esc="closeDOForm"
+        />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Nama</label>
+        <input
+          type="text"
+          class="form-control"
+          v-model="doForm.data.nama"
+          required
+        />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Ekspedisi</label>
+        <select
+          class="form-select"
+          v-model="doForm.data.ekspedisi"
+          required
+        >
+          <option value="">--Pilih--</option>
+          <option v-for="e in ekspedisiOptions" :key="e" :value="e">
+            {{ e }}
+          </option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Tanggal Kirim</label>
+        <input
+          type="date"
+          class="form-control"
+          v-model="doForm.data.tanggalKirimRaw"
+        />
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Total Harga</label>
+        <input
+          type="number"
+          class="form-control"
+          v-model.number="doForm.data.totalHarga"
+        />
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button type="submit" class="btn btn-success me-2">
+          Simpan
+        </button>
+        <button
+          type="button"
+          class="btn btn-secondary"
+          @click="closeDOForm"
+        >
+          Batal
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
       </section>
     </div>
+    <div id="app">
+  <i data-feather="search"></i>
+</div>
 
-    <!-- VUE + APP -->
+<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+<script src="https://unpkg.com/feather-icons"></script>
+
+<!-- VUE + APP -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="apps.js"></script>
+
   </body>
 </html>
