@@ -1,0 +1,60 @@
+
+<!DOCTYPE html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Halaman login SITTA Universitas Terbuka">
+    <title>Login</title>
+
+    <!-- FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- STYLE -->
+    <link rel="stylesheet" href="login.css" />
+  </head>
+
+  <body>
+    <div class="login-container">
+      <h2>
+        Selamat Datang <br />
+        Di SITTA <br />
+        Universitas Terbuka
+      </h2>
+
+      <form novalidate>
+        <input type="email" id="email" placeholder="Masukkan Email" required />
+        <input
+          type="password"
+          id="password"
+          placeholder="Masukkan Password"
+          required
+        />
+        <button type="button" id="btnLogin" class="btn-primary">Masuk</button>
+        <button type="button" class="btn-secondary">Lupa Password</button>
+        <p>Belum Punya Akun? <a href="#">Daftar</a></p>
+      </form>
+    </div>
+
+    <footer>
+      <img
+        src="logo.png"
+        alt="Logo Universitas"
+        style="width: 150px; height: auto"
+      />
+    </footer>
+
+    <!-- JAVASCRIPT MODULE -->
+    <script type="module" src="login.js"></script>
+    <!-- <script src="data.js"></script> -->
+  </body>
+</html>
+
+
+
+
