@@ -1,5 +1,13 @@
 /* apps.js */
-const { createApp, ref, reactive, computed } = Vue;
+const {
+  createApp,
+  ref,
+  reactive,
+  computed,
+  watch,
+  onMounted,
+  onBeforeUnmount,
+} = Vue;
 
 createApp({
   setup() {
@@ -26,6 +34,11 @@ createApp({
     // FILTERING
     const filters = reactive({ upbjj: "", kategori: "", special: "" });
     const sortBy = ref("");
+
+    // === WATCHER WAJIB TUGAS ===
+    watch(filters, (newVal, oldVal) => {
+      console.log("Watcher aktif: FILTER berubah ->", newVal);
+    });
 
     const kategoriOptions = computed(() => {
       return [...new Set(stockData.value.map((s) => s.kategori))];
@@ -110,6 +123,7 @@ createApp({
     function openEditStock(idx) {
       const item = displayedStocks.value[idx];
       const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
+
       stockForm.editIndex = globalIdx;
       stockForm.data = { ...stockData.value[globalIdx] };
       stockForm.visible = true;
@@ -132,7 +146,6 @@ createApp({
       }
       stockForm.visible = false;
     }
-
     function confirmDeleteStock(idx) {
       deleteConfirm.visible = true;
       deleteConfirm.index = idx;
@@ -140,8 +153,13 @@ createApp({
 
     function deleteStockConfirmed() {
       const item = displayedStocks.value[deleteConfirm.index];
+
+      // Cari berdasarkan kode (unik, aman meski list di-filter)
       const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
-      stockData.value.splice(globalIdx, 1);
+
+      if (globalIdx !== -1) {
+        stockData.value.splice(globalIdx, 1);
+      }
       deleteConfirm.visible = false;
     }
 
@@ -217,8 +235,6 @@ createApp({
       deleteDOConfirm.visible = false;
     }
 
-
-
     function resetDOFilters() {
       filters.upbjj = "";
       filters.kategori = "";
@@ -232,6 +248,35 @@ createApp({
     function formatDateTime(d) {
       return new Date(d).toLocaleString("id-ID");
     }
+
+    // ============================================
+    // KEYBOARD EVENT HANDLER (ENTER & ESC)
+    // ============================================
+    function handleKey(e) {
+      // ENTER untuk Save
+      if (e.key === "Enter") {
+        if (stockForm.visible) saveStock();
+        if (doForm.visible) saveDO();
+      }
+
+      // ESC untuk Close
+      if (e.key === "Escape") {
+        if (stockForm.visible) closeStockForm();
+        if (doForm.visible) closeDOForm();
+        if (deleteConfirm.visible) deleteConfirm.visible = false;
+        if (deleteDOConfirm.visible) deleteDOConfirm.visible = false;
+      }
+    }
+
+    // Pasang event waktu mount
+    onMounted(() => {
+      window.addEventListener("keydown", handleKey);
+    });
+
+    // Bersihkan event saat component dimatikan
+    onBeforeUnmount(() => {
+      window.removeEventListener("keydown", handleKey);
+    });
 
     // RETURN TO VUE
     return {
@@ -277,3 +322,25 @@ createApp({
     };
   },
 }).mount("#app");
+
+// ============================================
+// Fungsi Logout
+// ============================================
+function logout() {
+  localStorage.removeItem("userLogin");
+  window.location.href = "index.html";
+}
+
+// ============================================
+// Menampilkan nama pengguna di navbar
+// ============================================
+document.addEventListener("DOMContentLoaded", () => {
+  const userData = JSON.parse(localStorage.getItem("userLogin"));
+  const welcomeText = document.getElementById("welcomeUser");
+
+  if (userData && welcomeText) {
+    welcomeText.textContent = `Hi, ${userData.nama}`;
+  } else {
+    window.location.href = "login.html"; // Kalau belum login, balik ke halaman login
+  }
+});
