@@ -20,25 +20,43 @@ createApp({
     const upbjjList = ref([]);
     const ekspedisiOptions = ref([]);
 
+    // TOOLTIP state (untuk showNote/hideNote)
+    const tooltip = reactive({ visible: false, index: null, x: 0, y: 0 });
+
     // Load JSON
     fetch("./dataBahanAjar.json")
       .then((r) => r.json())
       .then((j) => {
         stockData.value = j.stocks || [];
-        doList.value = j.do || [];
+        doList.value = (j.do || []).map((d) => ({
+          ...d,
+          progress: (d.progress || []).map((p) => ({
+            ...p,
+            time: new Date(p.time),
+          })),
+          newProgress: "",
+        }));
         upbjjList.value = [...new Set(stockData.value.map((s) => s.upbjj))];
-        ekspedisiOptions.value = j.pengirimanList?.map((a) => a.nama) || [];
+        ekspedisiOptions.value = j.pengirimanList?.map((a) => a.nama) || [
+          "JNE",
+          "J&T",
+          "Pos Indonesia",
+          "SiCepat",
+        ];
       })
       .catch((err) => console.error("Gagal load JSON:", err));
 
-    // FILTERING
+    // Status formatter (dipanggil dari template: statusText(r) )
+    function statusText(row) {
+      if (!row) return "-";
+      if (row.qty === 0) return "Kosong";
+      if (row.qty < row.safety) return "Hampir Habis";
+      return "Aman";
+    }
+
+    // FILTER
     const filters = reactive({ upbjj: "", kategori: "", special: "" });
     const sortBy = ref("");
-
-    // === WATCHER WAJIB TUGAS ===
-    watch(filters, (newVal, oldVal) => {
-      console.log("Watcher aktif: FILTER berubah ->", newVal);
-    });
 
     const kategoriOptions = computed(() => {
       return [...new Set(stockData.value.map((s) => s.kategori))];
@@ -62,45 +80,13 @@ createApp({
     });
 
     function openDODetail(i) {
+      // pastikan indeks valid
+      if (typeof i !== "number" || i < 0 || i >= doList.value.length) return;
       doDetail.visible = true;
       doDetail.index = i;
     }
 
-    function resetStockFilters() {
-      filters.upbjj = "";
-      filters.kategori = "";
-      filters.special = "";
-      sortBy.value = "";
-    }
-
-    // TOOLTIP
-    const tooltip = reactive({ visible: false, index: null, x: 0, y: 0 });
-    function showNote(idx, e) {
-      tooltip.visible = true;
-      tooltip.index = idx;
-      tooltip.x = e.clientX + 10;
-      tooltip.y = e.clientY + 10;
-    }
-    function hideNote() {
-      tooltip.visible = false;
-    }
-
-    function statusColor(r) {
-      if (r.qty === 0) return "red";
-      if (r.qty < r.safety) return "orange";
-      return "green";
-    }
-    function statusText(r) {
-      if (r.qty === 0) return "Kosong";
-      if (r.qty < r.safety) return "Menipis";
-      return "Aman";
-    }
-
-    function formatCurrency(v) {
-      return "Rp " + Number(v).toLocaleString("id-ID");
-    }
-
-    // ========= FORM STOKNYA =========
+    // ========= FORM STOK =========
     const stockForm = reactive({ visible: false, editIndex: null, data: {} });
     const deleteConfirm = reactive({ visible: false, index: null });
 
@@ -122,8 +108,9 @@ createApp({
 
     function openEditStock(idx) {
       const item = displayedStocks.value[idx];
+      if (!item) return alert("Item tidak ditemukan (index invalid).");
       const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
-
+      if (globalIdx === -1) return alert("Data asli tidak ditemukan.");
       stockForm.editIndex = globalIdx;
       stockForm.data = { ...stockData.value[globalIdx] };
       stockForm.visible = true;
@@ -135,17 +122,13 @@ createApp({
 
     function saveStock() {
       const d = stockForm.data;
-      if (!d.kode || !d.judul || !d.upbjj) {
-        alert("Isi Kode, Judul, dan UT-Daerah");
-        return;
-      }
-      if (stockForm.editIndex === null) {
-        stockData.value.push({ ...d });
-      } else {
-        stockData.value[stockForm.editIndex] = { ...d };
-      }
+      if (!d.kode || !d.judul || !d.upbjj)
+        return alert("Isi Kode, Judul, dan UT-Daerah");
+      if (stockForm.editIndex === null) stockData.value.push({ ...d });
+      else stockData.value[stockForm.editIndex] = { ...d };
       stockForm.visible = false;
     }
+
     function confirmDeleteStock(idx) {
       deleteConfirm.visible = true;
       deleteConfirm.index = idx;
@@ -153,14 +136,34 @@ createApp({
 
     function deleteStockConfirmed() {
       const item = displayedStocks.value[deleteConfirm.index];
-
-      // Cari berdasarkan kode (unik, aman meski list di-filter)
-      const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
-
-      if (globalIdx !== -1) {
-        stockData.value.splice(globalIdx, 1);
+      if (!item) {
+        deleteConfirm.visible = false;
+        return;
       }
+      const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
+      if (globalIdx !== -1) stockData.value.splice(globalIdx, 1);
       deleteConfirm.visible = false;
+    }
+
+    // reset filters (dipanggil dari HTML)
+    function resetStockFilters() {
+      filters.upbjj = "";
+      filters.kategori = "";
+      filters.special = "";
+      sortBy.value = "";
+    }
+
+    // tooltip handlers (dipanggil dari HTML)
+    function showNote(idx, event) {
+      tooltip.index = idx;
+      tooltip.visible = true;
+      // offset agar tooltip tidak menutupi mouse
+      tooltip.x = (event?.clientX ?? 0) + 12;
+      tooltip.y = (event?.clientY ?? 0) + 12;
+    }
+    function hideNote() {
+      tooltip.visible = false;
+      tooltip.index = null;
     }
 
     // ========= TRACKING DO =========
@@ -201,6 +204,9 @@ createApp({
       d.tanggalKirim = d.tanggalKirimRaw
         ? new Date(d.tanggalKirimRaw)
         : new Date();
+      // pastikan ada progress array
+      d.progress = d.progress || [];
+      d.newProgress = d.newProgress ?? "";
       doList.value.push({ ...d });
       doForm.visible = false;
     }
@@ -210,56 +216,52 @@ createApp({
       if (!q) return doList.value;
       return doList.value.filter(
         (d) =>
-          d.nomor.toLowerCase().includes(q) || d.nim.toLowerCase().includes(q)
+          (d.nomor || "").toLowerCase().includes(q) ||
+          (d.nim || "").toLowerCase().includes(q)
       );
     });
 
-    function openDO(i) {
-      doList.value[i].open = !doList.value[i].open;
-    }
+    // addProgressForm sekarang fleksibel:
+    // - jika dipanggil dengan index (number) -> tambahkan ke doList[index]
+    // - jika dipanggil tanpa arg -> tambahkan ke doForm.data (form tambah DO)
+    function addProgressForm(i) {
+      if (typeof i === "number") {
+        const d = doList.value[i];
+        if (!d) return alert("DO tidak ditemukan.");
+        if (!d.newProgress) return;
+        d.progress = d.progress || [];
+        d.progress.push({ time: new Date(), keterangan: d.newProgress });
+        d.newProgress = "";
+        return;
+      }
 
-    function addProgress(i) {
-      const d = doList.value[i];
-      if (!d.newProgress) return;
-      d.progress.push({ time: new Date(), keterangan: d.newProgress });
-      d.newProgress = "";
+      if (doForm.visible && doForm.data) {
+        const d = doForm.data;
+        if (!d.newProgress) return;
+        d.progress = d.progress || [];
+        d.progress.push({ time: new Date(), keterangan: d.newProgress });
+        d.newProgress = "";
+      }
     }
 
     function confirmDeleteDO(i) {
-      deleteDOConfirm.visible = true; // tampilkan modal
-      deleteDOConfirm.index = i; // simpan index baris yang dipilih
+      deleteDOConfirm.visible = true;
+      deleteDOConfirm.index = i;
     }
 
     function deleteDOConfirmed() {
+      if (deleteDOConfirm.index == null) return;
       doList.value.splice(deleteDOConfirm.index, 1);
       deleteDOConfirm.visible = false;
+      deleteDOConfirm.index = null;
     }
 
-    function resetDOFilters() {
-      filters.upbjj = "";
-      filters.kategori = "";
-      filters.special = "";
-      sortBy.value = "";
-    }
-
-    function formatDate(d) {
-      return new Date(d).toLocaleDateString("id-ID");
-    }
-    function formatDateTime(d) {
-      return new Date(d).toLocaleString("id-ID");
-    }
-
-    // ============================================
-    // KEYBOARD EVENT HANDLER (ENTER & ESC)
-    // ============================================
+    // KEYBOARD HANDLER
     function handleKey(e) {
-      // ENTER untuk Save
       if (e.key === "Enter") {
         if (stockForm.visible) saveStock();
         if (doForm.visible) saveDO();
       }
-
-      // ESC untuk Close
       if (e.key === "Escape") {
         if (stockForm.visible) closeStockForm();
         if (doForm.visible) closeDOForm();
@@ -268,17 +270,14 @@ createApp({
       }
     }
 
-    // Pasang event waktu mount
     onMounted(() => {
       window.addEventListener("keydown", handleKey);
     });
 
-    // Bersihkan event saat component dimatikan
     onBeforeUnmount(() => {
       window.removeEventListener("keydown", handleKey);
     });
 
-    // RETURN TO VUE
     return {
       tab,
       stockData,
@@ -287,60 +286,47 @@ createApp({
       filters,
       kategoriOptions,
       displayedStocks,
-      tooltip,
-      sortBy,
       stockForm,
       deleteConfirm,
       doDetail,
-      openDODetail,
+      doList,
+      doForm,
+      doSearch,
+      filteredDOs,
+      tooltip,
+      formatCurrency: (v) => "Rp " + Number(v).toLocaleString("id-ID"),
+      formatDate: (d) => (d ? new Date(d).toLocaleDateString("id-ID") : "-"),
+      formatDateTime: (d) => (d ? new Date(d).toLocaleString("id-ID") : "-"),
       openCreateStock,
       openEditStock,
       closeStockForm,
       saveStock,
       confirmDeleteStock,
       deleteStockConfirmed,
-      statusColor,
-      statusText,
-      formatCurrency,
-      resetStockFilters,
-      showNote,
-      hideNote,
-      doList,
-      doForm,
-      doSearch,
-      filteredDOs,
       openCreateDO,
       closeDOForm,
       saveDO,
-      openDO,
-      addProgress,
-      deleteDOConfirm,
+      addProgressForm,
       confirmDeleteDO,
       deleteDOConfirmed,
-      formatDate,
-      formatDateTime,
+      statusText,
+      resetStockFilters,
+      showNote,
+      hideNote,
     };
   },
 }).mount("#app");
 
-// ============================================
-// Fungsi Logout
-// ============================================
+// LOGOUT
 function logout() {
   localStorage.removeItem("userLogin");
   window.location.href = "index.html";
 }
 
-// ============================================
-// Menampilkan nama pengguna di navbar
-// ============================================
+// Setelah Login
 document.addEventListener("DOMContentLoaded", () => {
   const userData = JSON.parse(localStorage.getItem("userLogin"));
   const welcomeText = document.getElementById("welcomeUser");
-
-  if (userData && welcomeText) {
-    welcomeText.textContent = `Hi, ${userData.nama}`;
-  } else {
-    window.location.href = "login.html"; // Kalau belum login, balik ke halaman login
-  }
+  if (userData && welcomeText) welcomeText.textContent = `Hi, ${userData.nama}`;
+  else window.location.href = "login.html";
 });
