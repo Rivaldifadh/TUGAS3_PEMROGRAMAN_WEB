@@ -13,6 +13,7 @@
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
       rel="stylesheet"
     />
+
     <link rel="stylesheet" href="style.css" />
 
     <!-- BOOTSTRAP CDN -->
@@ -25,14 +26,15 @@
   <body>
     <!-- NAVBAR -->
     <nav class="navbar">
-      <!-- <span id="welcomeUser"></span> -->
       <b id="welcomeUser"></b>
       <button onclick="logout()">Logout</button>
     </nav>
 
+    <!-- ROOT VUE -->
     <div id="app" class="container">
       <h2 class="mb-4 fw-bold">📦 Manajemen Stok Bahan Ajar & Tracking DO</h2>
 
+      <!-- TAB -->
       <ul class="nav nav-tabs mb-3">
         <li class="nav-item">
           <a
@@ -89,7 +91,7 @@
             style="max-width: 180px"
           >
             <option value="">Filter Khusus</option>
-            <option value="belowSafety">Stock < Safety</option>
+            <option value="belowSafety">Stock &lt; Safety</option>
             <option value="zero">Stock = 0</option>
           </select>
         </div>
@@ -110,6 +112,7 @@
                 <th>Aksi</th>
               </tr>
             </thead>
+
             <tbody>
               <tr v-for="(r,idx) in displayedStocks" :key="r.kode">
                 <td>{{r.kode}}</td>
@@ -130,14 +133,11 @@
                     <span
                       class="dot"
                       :style="{background: r.qty===0 ? 'var(--danger)' : r.qty < r.safety ? 'var(--warn)' : 'var(--safe)'}"
-                    >
-                    </span>
-
+                    ></span>
                     <span
                       :style="{color: r.qty===0 ? 'var(--danger)' : r.qty < r.safety ? 'var(--warn)' : 'var(--safe)'}"
+                      >{{statusText(r)}}</span
                     >
-                      {{statusText(r)}}
-                    </span>
                   </span>
 
                   <div
@@ -272,6 +272,7 @@
                 <button type="submit" class="btn btn-success me-2">
                   Simpan
                 </button>
+
                 <button
                   type="button"
                   class="btn btn-secondary"
@@ -284,199 +285,161 @@
           </div>
         </div>
       </section>
-
-      <!-- ==== TRACKING DO ==== -->
-      <section v-show="tab==='do'">
-        <div class="d-flex mb-3">
-          <button class="btn btn-primary me-2" @click="openCreateDO()">
-            Tambah DO
-          </button>
-          <input
-            type="text"
-            class="form-control me-2"
-            placeholder="Cari DO/NIM..."
-            v-model="doSearch"
-            style="max-width: 250px"
-          />
-        </div>
-
-        <div class="border bg-white rounded p-3 table-wrap">
-          <table class="table table-hover table-sm">
-            <thead class="table-light">
-              <tr>
-                <th>Nomor DO</th>
-                <th>NIM</th>
-                <th>Nama</th>
-                <th>Ekspedisi</th>
-                <th>Tanggal Kirim</th>
-                <th>Total Harga</th>
-                <th>Progress</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="(d,i) in filteredDOs" :key="d.nomor">
-                <td>{{ d.nomor }}</td>
-                <td>{{ d.nim }}</td>
-                <td>{{ d.nama }}</td>
-                <td>{{ d.ekspedisi }}</td>
-                <td>{{ formatDate(d.tanggalKirim) }}</td>
-                <td>{{ formatCurrency(d.totalHarga) }}</td>
-                <td>
-                  <ul class="mb-0">
-                    <li v-for="p in d.progress" :key="p.time">
-                      {{ formatDateTime(p.time) }} - {{ p.keterangan }}
-                    </li>
-                  </ul>
-                </td>
-                <td>
-                  <button @click="openDODetail(i)" class="btn btn-info btn-sm">
-                    Detail
-                  </button>
-<!-- 
-                  <div v-if="deleteDOConfirm.visible" class="modal-overlay">
-                    <div class="modal-body">
-                      <h4>Konfirmasi Hapus</h4>
-                      <p>Yakin ingin menghapus Delivery Order ini?</p>
-
-                      <button class="btn btn-danger" @click="confirmDeletedo(i)"
-">
-                        Hapus Sekarang
-                      </button>
-
-                      <button
-                        class="btn btn-secondary"
-                        @click="deletedoConfirm.visible = true"
-                      >
-                        Batal
-                      </button> -->
-                    </div>
-                  </div>
-                </td>
-              </tr>
-              <tr v-if="filteredDOs.length===0">
-                <td colspan="8" class="text-center text-muted py-3">
-                  Tidak ada data
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <!-- ==== MODAL TAMBAH DO ==== -->
-        <!-- ==== MODAL TAMBAH DO ==== -->
-<div v-if="doForm.visible" class="modal-panel">
-  <div class="card modal-card p-4">
-    <h5 class="mb-3">Tambah DO</h5>
-    <form @submit.prevent="saveDO" class="small-form">
-      <div class="mb-2">
-        <label class="form-label">Nomor DO</label>
-
-  <input
-  v-model="doList[doDetail.index].newProgress"
-  placeholder="Tulis update progres..."
-  class="input"
-  />
-
-  <!-- EVENT KEYBOARD -->
-  @keyup.enter="addProgress(doDetail.index)"
-  @keyup.esc="doList[doDetail.index].newProgress = ''"
-/>
-<button @click="addProgress(doDetail.index)" class="btn">
-  Tambah Progress
-</button>
-
-/>
-<button @click="addProgress(doDetail.index)" class="btn">
-  Tambah Progress
-</button>
-
-        <input
-          type="text"
-          class="form-control"
-          v-model="doForm.data.nomor"
-          readonly
-        />
-      </div>
-      <div class="mb-2">
-        <label class="form-label">NIM</label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="doForm.data.nim"
-          required
-
-          <!-- SISIPAN EVENT -->
-          @keyup.enter="saveDO"
-          @keyup.esc="closeDOForm"
-        />
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Nama</label>
-        <input
-          type="text"
-          class="form-control"
-          v-model="doForm.data.nama"
-          required
-        />
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Ekspedisi</label>
-        <select
-          class="form-select"
-          v-model="doForm.data.ekspedisi"
-          required
-        >
-          <option value="">--Pilih--</option>
-          <option v-for="e in ekspedisiOptions" :key="e" :value="e">
-            {{ e }}
-          </option>
-        </select>
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Tanggal Kirim</label>
-        <input
-          type="date"
-          class="form-control"
-          v-model="doForm.data.tanggalKirimRaw"
-        />
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Total Harga</label>
-        <input
-          type="number"
-          class="form-control"
-          v-model.number="doForm.data.totalHarga"
-        />
-      </div>
-      <div class="d-flex justify-content-end mt-3">
-        <button type="submit" class="btn btn-success me-2">
-          Simpan
-        </button>
-        <button
-          type="button"
-          class="btn btn-secondary"
-          @click="closeDOForm"
-        >
-          Batal
-        </button>
-      </div>
-    </form>
+      
+      <!-- ============= TRACKING DO ============= -->
+<section v-show="tab==='do'">
+  <div class="d-flex mb-3">
+    <button class="btn btn-primary me-2" @click="openCreateDO()">Tambah DO</button>
+    <input
+      type="text"
+      class="form-control me-2"
+      placeholder="Cari DO / NIM..."
+      v-model="doSearch"
+      style="max-width: 250px"
+    />
   </div>
-</div>
 
-      </section>
+  <div class="border bg-white rounded p-3 table-wrap">
+    <table class="table table-hover table-sm">
+      <thead class="table-light">
+        <tr>
+          <th>Nomor DO</th>
+          <th>NIM</th>
+          <th>Nama</th>
+          <th>Ekspedisi</th>
+          <th>Tanggal Kirim</th>
+          <th>Total Harga</th>
+          <th>Progress</th>
+          <th>Aksi</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="(d,i) in filteredDOs" :key="d.nomor">
+          <td>{{ d.nomor }}</td>
+          <td>{{ d.nim }}</td>
+          <td>{{ d.nama }}</td>
+          <td>{{ d.ekspedisi }}</td>
+          <td>{{ formatDate(d.tanggalKirim) }}</td>
+          <td>{{ formatCurrency(d.totalHarga) }}</td>
+
+          <td>
+            <ul class="mb-0">
+              <li v-for="p in d.progress" :key="p.time">
+                {{ formatDateTime(p.time) }} - {{ p.keterangan }}
+              </li>
+            </ul>
+          </td>
+
+          <td>
+            <button class="btn btn-info btn-sm" @click="openDODetail(i)">Detail</button>
+            <td class="text-center">
+          <div class="btn-group btn-group-sm">
+            <button
+              class="btn btn-outline-danger"
+              @click="deleteDO(index)"
+              title="Hapus DO"
+              >
+              🗑️ Hapus
+            </button>
+          </div>
+            </td>
+
+          </td>
+        </tr>
+
+        <tr v-if="filteredDOs.length===0">
+          <td colspan="8" class="text-center text-muted py-3">
+            Tidak ada data
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ========== MODAL TAMBAH DO ========== -->
+  <div v-if="doForm.visible" class="modal-panel">
+    <div class="card modal-card p-4">
+      <h5 class="mb-3">Tambah DO</h5>
+
+      <form @submit.prevent="saveDO" class="small-form">
+        <div class="mb-2">
+          <label class="form-label">Nomor DO</label>
+          <input type="text" class="form-control" v-model="doForm.data.nomor" readonly />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">NIM</label>
+          <input type="text" class="form-control" v-model="doForm.data.nim" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Nama</label>
+          <input type="text" class="form-control" v-model="doForm.data.nama" required />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Ekspedisi</label>
+          <select class="form-select" v-model="doForm.data.ekspedisi" required>
+            <option value="">--Pilih--</option>
+            <option v-for="e in ekspedisiOptions" :key="e" :value="e">{{ e }}</option>
+          </select>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Tanggal Kirim</label>
+          <input type="date" class="form-control" v-model="doForm.data.tanggalKirimRaw" />
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label">Total Harga</label>
+          <input type="number" class="form-control" v-model.number="doForm.data.totalHarga" />
+        </div>
+
+        <div class="d-flex justify-content-end mt-3">
+          <button type="submit" class="btn btn-success me-2">Simpan</button>
+          <button type="button" class="btn btn-secondary" @click="closeDOForm">Batal</button>
+        </div>
+      </form>
     </div>
-    <div id="app">
-  <i data-feather="search"></i>
-</div>
+  </div>
 
-<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-<script src="https://unpkg.com/feather-icons"></script>
+  <!-- ========== MODAL DETAIL DO ========== -->
+  <div v-if="doDetail.visible" class="modal-overlay">
+    <div class="modal-box">
+      <h3>Detail DO: {{ doList[doDetail.index].nomor }}</h3>
 
-<!-- VUE + APP -->
+      <p><strong>Nama:</strong> {{ doList[doDetail.index].nama }}</p>
+      <p><strong>NIM:</strong> {{ doList[doDetail.index].nim }}</p>
+      <p><strong>Ekspedisi:</strong> {{ doList[doDetail.index].ekspedisi }}</p>
+      <p><strong>Tanggal Kirim:</strong> {{ formatDate(doList[doDetail.index].tanggalKirim) }}</p>
+
+      <hr />
+
+      <h4>Riwayat Progress</h4>
+      <ul>
+        <li v-for="p in doList[doDetail.index].progress">
+          {{ formatDateTime(p.time) }} - {{ p.keterangan }}
+        </li>
+      </ul>
+
+      <input v-model="doList[doDetail.index].newProgress" class="form-control mb-2" placeholder="Tulis update progres..." />
+
+      <button class="btn btn-primary btn-sm" @click="addProgressForm(doDetail.index)">
+        Tambah Progress
+      </button>
+
+      <button class="btn btn-secondary btn-sm mt-3" @click="doDetail.visible=false">
+        Tutup
+      </button>
+    </div>
+  </div>
+</section>
+
+
+
+    <!-- VUE + APP -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
     <script src="apps.js"></script>
-
   </body>
 </html>
