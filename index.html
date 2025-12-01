@@ -1,206 +1,468 @@
 <!DOCTYPE html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Manajemen Stok Bahan Ajar & Tracking DO</title>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- BOOTSTRAP -->
-  <link
-    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-    rel="stylesheet"
-  />
- <link rel="stylesheet" href="style.css"
-  <!-- ICON -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
-</head>
+    <title>Manajemen Stok Bahan Ajar & Tracking DO</title>
 
-<body>
-<div id="app" class="container py-4">
+    <!-- GOOGLE FONT -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <h2 class="mb-3 text-center fw-bold">📚 Manajemen Stok Bahan Ajar & Tracking Delivery Order</h2>
+    <!-- EXTERNAL CSS -->
+    <link rel="stylesheet" href="style.css" />
 
-  <!-- TAB -->
-  <div class="d-flex gap-2 justify-content-center mb-4">
-    <button class="btn" :class="{ 'tab-btn-active': tab==='stok' }" @click="tab='stok'">Manajemen Stok</button>
-    <button class="btn" :class="{ 'tab-btn-active': tab==='do' }" @click="tab='do'">Tracking DO</button>
-  </div>
+    <!-- BOOTSTRAP -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+  </head>
 
-  <!-- ==== STOCK TAB ==== -->
-  <section v-show="tab==='stok'">
+  <body>
+    <div id="app" class="container">
+      <h2 class="mb-4 fw-bold">📦 Manajemen Stok Bahan Ajar & Tracking DO</h2>
 
-    <div class="d-flex mb-3 gap-2">
-      <button class="btn btn-primary" @click="openCreateStock">Tambah Bahan Ajar</button>
+      <!-- NAVIGATION TAB -->
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <a
+            href="#"
+            class="nav-link"
+            :class="tab === 'stok' ? 'active' : ''"
+            @click.prevent="tab='stok'"
+            >Stok Bahan Ajar</a
+          >
+        </li>
+        <li class="nav-item">
+          <a
+            href="#"
+            class="nav-link"
+            :class="tab === 'do' ? 'active' : ''"
+            @click.prevent="tab='do'"
+            >Tracking DO</a
+          >
+        </li>
+      </ul>
 
-      <select class="form-select w-auto" v-model="filters.upbjj">
-        <option value="">Semua UPBJJ</option>
-        <option v-for="u in upbjjList" :key="u">{{u}}</option>
-      </select>
+      <!-- ==================== STOK ==================== -->
+      <section v-show="tab === 'stok'">
+        <div class="d-flex mb-3">
+          <button class="btn btn-primary me-2" @click="openCreateStock()">
+            Tambah Bahan Ajar
+          </button>
+          <button
+            class="btn btn-secondary me-auto"
+            @click="resetStockFilters()"
+          >
+            Reset Filter
+          </button>
 
-      <select class="form-select w-auto" v-model="filters.kategori">
-        <option value="">Semua Kategori</option>
-        <option v-for="k in kategoriOptions" :key="k">{{k}}</option>
-      </select>
+          <select
+            class="form-select me-2"
+            v-model="filters.upbjj"
+            style="max-width: 180px"
+          >
+            <option value="">Semua UT-Daerah</option>
+            <option v-for="u in upbjjList" :key="u" :value="u">{{ u }}</option>
+          </select>
 
-      <select class="form-select w-auto" v-model="filters.special">
-        <option value="">Filter Khusus</option>
-        <option value="belowSafety">Qty < Safety</option>
-        <option value="zero">Stok Habis</option>
-      </select>
+          <select
+            class="form-select me-2"
+            v-model="filters.kategori"
+            style="max-width: 180px"
+          >
+            <option value="">Semua Kategori</option>
+            <option v-for="k in kategoriOptions" :key="k">{{ k }}</option>
+          </select>
 
-      <button class="btn btn-outline-secondary" @click="resetStockFilters">Reset</button>
-    </div>
+          <select
+            class="form-select"
+            v-model="filters.special"
+            style="max-width: 180px"
+          >
+            <option value="">Filter Khusus</option>
+            <option value="belowSafety">Stock < Safety</option>
+            <option value="zero">Stock = 0</option>
+          </select>
+        </div>
 
-    <table class="table table-hover table-striped">
-      <thead class="table-primary">
-        <tr class="text-center">
-          <th>Kode</th><th>Judul</th><th>UPBJJ</th><th>Qty</th><th>Safety</th><th>Status</th><th>Catatan</th><th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(s,i) in displayedStocks" :key="s.kode" class="align-middle text-center">
-          <td>{{s.kode}}</td>
-          <td>{{s.judul}}</td>
-          <td>{{s.upbjj}}</td>
-          <td>{{s.qty}}</td>
-          <td>{{s.safety}}</td>
-          <td>{{statusText(s)}}</td>
-          <td>
-            <button class="btn btn-sm btn-warning"
-                    @mouseover="showNote(i,$event)" @mouseleave="hideNote">
-              Catatan
+        <div class="border bg-white rounded p-3 table-wrap">
+          <table class="table table-hover table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Kode</th>
+                <th>Judul</th>
+                <th>Kategori</th>
+                <th>UT-Daerah</th>
+                <th>Rak</th>
+                <th>Harga</th>
+                <th>Stok</th>
+                <th>Safety</th>
+                <th>Status</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="(r, idx) in displayedStocks" :key="r.kode">
+                <td>{{ r.kode }}</td>
+                <td>{{ r.judul }}</td>
+                <td>{{ r.kategori }}</td>
+                <td>{{ r.upbjj }}</td>
+                <td>{{ r.lokasiRak }}</td>
+                <td>{{ formatCurrency(r.harga) }}</td>
+                <td>{{ r.qty }}</td>
+                <td>{{ r.safety }}</td>
+
+                <td
+                  style="position: relative"
+                  @mouseenter="showNote(idx,$event)"
+                  @mouseleave="hideNote"
+                >
+                  <span class="status-badge">
+                    <span
+                      class="dot"
+                      :style="{background: r.qty===0 ? 'var(--danger)' : r.qty<r.safety ? 'var(--warn)' : 'var(--safe)'}"
+                    ></span>
+                    <span
+                      :style="{color: r.qty===0 ? 'var(--danger)' : r.qty<r.safety ? 'var(--warn)' : 'var(--safe)'}"
+                    >
+                      {{ statusText(r) }}
+                    </span>
+                  </span>
+
+                  <div
+                    v-if="tooltip.visible && tooltip.index===idx"
+                    class="tooltip-preview"
+                    :style="{top:tooltip.y+'px', left:tooltip.x+'px'}"
+                    v-html="r.catatanHTML"
+                  ></div>
+                </td>
+
+                <td>
+                  <button
+                    class="btn btn-sm btn-outline-success me-1"
+                    @click="openEditStock(idx)"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-danger"
+                    @click="confirmDeleteStock(idx)"
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+
+              <tr v-if="displayedStocks.length === 0">
+                <td colspan="10" class="text-center py-3 text-muted">
+                  Tidak ada data
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================== MODAL TAMBAH / EDIT STOK ==================== -->
+        <div v-if="stockForm.visible" class="modal-panel">
+          <div class="card modal-card p-4">
+            <h5 class="mb-3">
+              {{ stockForm.editIndex === null ? 'Tambah' : 'Edit' }} Bahan Ajar
+            </h5>
+
+            <form @submit.prevent="saveStock" class="small-form">
+              <div class="mb-2">
+                <label class="form-label">Kode</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="stockForm.data.kode"
+                  required
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Judul</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="stockForm.data.judul"
+                  required
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Kategori</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="stockForm.data.kategori"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">UT-Daerah</label>
+                <select
+                  class="form-select"
+                  v-model="stockForm.data.upbjj"
+                  required
+                >
+                  <option value="">--Pilih--</option>
+                  <option v-for="u in upbjjList" :key="u" :value="u">
+                    {{ u }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Lokasi Rak</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="stockForm.data.lokasiRak"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Harga</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model.number="stockForm.data.harga"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Stok</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model.number="stockForm.data.qty"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Safety Stock</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model.number="stockForm.data.safety"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Catatan</label>
+                <textarea
+                  class="form-control"
+                  v-model="stockForm.data.catatanHTML"
+                ></textarea>
+              </div>
+
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-success me-2">
+                  Simpan
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="closeStockForm"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      <!-- ==================== TRACKING DO ==================== -->
+      <section v-show="tab === 'do'">
+        <div class="d-flex mb-3">
+          <button class="btn btn-primary me-2" @click="openCreateDO()">
+            Tambah DO
+          </button>
+          <input
+            type="text"
+            placeholder="Cari DO/NIM..."
+            class="form-control me-2"
+            style="max-width: 250px"
+            v-model="doSearch"
+          />
+        </div>
+
+        <div class="border bg-white rounded p-3 table-wrap">
+          <table class="table table-hover table-sm">
+            <thead class="table-light">
+              <tr>
+                <th>Nomor DO</th>
+                <th>NIM</th>
+                <th>Nama</th>
+                <th>Ekspedisi</th>
+                <th>Tanggal Kirim</th>
+                <th>Total Harga</th>
+                <th>Progress</th>
+                <th>Aksi</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="(d,i) in filteredDOs" :key="d.nomor">
+                <td>{{ d.nomor }}</td>
+                <td>{{ d.nim }}</td>
+                <td>{{ d.nama }}</td>
+                <td>{{ d.ekspedisi }}</td>
+                <td>{{ formatDate(d.tanggalKirim) }}</td>
+                <td>{{ formatCurrency(d.totalHarga) }}</td>
+                <td>
+                  <ul class="mb-0">
+                    <li v-for="p in d.progress" :key="p.time">
+                      {{ formatDateTime(p.time) }} - {{ p.keterangan }}
+                    </li>
+                  </ul>
+                </td>
+                <td>
+                  <button class="btn btn-info btn-sm" @click="openDODetail(i)">
+                    Detail
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- ==================== MODAL TAMBAH DO ==================== -->
+        <div v-if="doForm.visible" class="modal-panel">
+          <div class="card modal-card p-4">
+            <h5 class="mb-3">Tambah DO</h5>
+
+            <form @submit.prevent="saveDO" class="small-form">
+              <div class="mb-2">
+                <label class="form-label">Nomor DO</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="doForm.data.nomor"
+                  readonly
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">NIM</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="doForm.data.nim"
+                  required
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Nama</label>
+                <input
+                  type="text"
+                  class="form-control"
+                  v-model="doForm.data.nama"
+                  required
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Ekspedisi</label>
+                <select
+                  class="form-select"
+                  v-model="doForm.data.ekspedisi"
+                  required
+                >
+                  <option value="">--Pilih--</option>
+                  <option v-for="e in ekspedisiOptions" :key="e" :value="e">
+                    {{ e }}
+                  </option>
+                </select>
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Tanggal Kirim</label>
+                <input
+                  type="date"
+                  class="form-control"
+                  v-model="doForm.data.tanggalKirimRaw"
+                />
+              </div>
+
+              <div class="mb-2">
+                <label class="form-label">Total Harga</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  v-model.number="doForm.data.totalHarga"
+                />
+              </div>
+
+              <div class="d-flex justify-content-end mt-3">
+                <button type="submit" class="btn btn-success me-2">
+                  Simpan
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="closeDOForm"
+                >
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- ==================== MODAL DETAIL DO ==================== -->
+        <div v-if="doDetail.visible" class="modal-overlay">
+          <div class="modal-box">
+            <h3>Detail DO: {{ doList[doDetail.index].nomor }}</h3>
+            <p><strong>Nama:</strong> {{ doList[doDetail.index].nama }}</p>
+            <p><strong>NIM:</strong> {{ doList[doDetail.index].nim }}</p>
+            <p>
+              <strong>Ekspedisi:</strong> {{ doList[doDetail.index].ekspedisi }}
+            </p>
+            <p>
+              <strong>Tanggal Kirim:</strong> {{
+              formatDate(doList[doDetail.index].tanggalKirim) }}
+            </p>
+
+            <hr />
+
+            <h4>Riwayat Progress</h4>
+            <ul class="progress-list">
+              <li v-for="p in doList[doDetail.index].progress">
+                {{ formatDateTime(p.time) }} - {{ p.keterangan }}
+              </li>
+            </ul>
+
+            <input
+              v-model="doList[doDetail.index].newProgress"
+              placeholder="Tulis update progres..."
+              class="input"
+            />
+            <button class="btn" @click="addProgress(doDetail.index)">
+              Tambah Progress
             </button>
-          </td>
-          <td>
-            <div class="btn-group btn-group-sm">
-              <button class="btn btn-info" @click="openEditStock(i)">Edit</button>
-              <button class="btn btn-danger" @click="confirmDeleteStock(i)">Hapus</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
 
-  <!-- ==== DO TAB ==== -->
-  <section v-show="tab==='do'">
-
-    <div class="d-flex mb-3 gap-2">
-      <button class="btn btn-primary" @click="openCreateDO">Tambah DO</button>
-      <input type="text" class="form-control w-auto" placeholder="Cari DO/NIM/Nama" v-model="doSearch" />
-    </div>
-
-    <table class="table table-bordered table-striped">
-      <thead class="table-secondary">
-        <tr class="text-center">
-          <th>Nomor DO</th><th>NIM</th><th>Nama</th><th>Ekspedisi</th><th>Tgl Kirim</th><th>Aksi</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="(d,i) in filteredDOs" :key="d.nomor" class="align-middle text-center">
-          <td>{{d.nomor}}</td>
-          <td>{{d.nim}}</td>
-          <td>{{d.nama}}</td>
-          <td>{{d.ekspedisi}}</td>
-          <td>{{formatDate(d.tanggalKirim)}}</td>
-          <td>
-            <div class="btn-group btn-group-sm">
-              <button class="btn btn-info" @click="openDODetail(i)">Detail</button>
-              <button class="btn btn-danger" @click="deleteDO(i)">🗑️ Hapus</button>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <!-- Tooltip Catatan -->
-  <div v-if="tooltip.visible"
-       class="tooltip-note"
-       :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }"
-       v-html="displayedStocks[tooltip.index]?.catatanHTML">
-  </div>
-
-  <!-- STOCK FORM MODAL -->
-  <div v-if="stockForm.visible" class="modal d-block" style="background:#0006;">
-    <div class="modal-dialog">
-      <div class="modal-content p-3">
-        <h5 class="mb-3">Form Bahan Ajar</h5>
-        <input class="form-control mb-2" placeholder="Kode" v-model="stockForm.data.kode">
-        <input class="form-control mb-2" placeholder="Judul" v-model="stockForm.data.judul">
-        <input class="form-control mb-2" placeholder="UPBJJ" v-model="stockForm.data.upbjj">
-        <input class="form-control mb-2" placeholder="Kategori" v-model="stockForm.data.kategori">
-        <input type="number" class="form-control mb-2" placeholder="Qty" v-model="stockForm.data.qty">
-        <input type="number" class="form-control mb-2" placeholder="Safety" v-model="stockForm.data.safety">
-        <textarea class="form-control mb-2" placeholder="Catatan (HTML)" v-model="stockForm.data.catatanHTML"></textarea>
-
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-secondary" @click="closeStockForm">Batal</button>
-          <button class="btn btn-success" @click="saveStock">Simpan</button>
+            <button class="btn-cancel" @click="doDetail.visible=false">
+              Tutup
+            </button>
+          </div>
         </div>
-      </div>
+      </section>
     </div>
-  </div>
 
-  <!-- DO FORM MODAL -->
-  <div v-if="doForm.visible" class="modal d-block" style="background:#0006;">
-    <div class="modal-dialog">
-      <div class="modal-content p-3">
-        <h5 class="mb-3">Form Delivery Order</h5>
-        <input class="form-control mb-2" disabled v-model="doForm.data.nomor">
-        <input class="form-control mb-2" placeholder="NIM" v-model="doForm.data.nim">
-        <input class="form-control mb-2" placeholder="Nama" v-model="doForm.data.nama">
-
-        <select class="form-select mb-2" v-model="doForm.data.ekspedisi">
-          <option value="">Pilih Ekspedisi</option>
-          <option v-for="e in ekspedisiOptions" :key="e">{{e}}</option>
-        </select>
-
-        <input type="date" class="form-control mb-3" v-model="doForm.data.tanggalKirimRaw"/>
-
-        <div class="d-flex justify-content-end gap-2">
-          <button class="btn btn-secondary" @click="closeDOForm">Batal</button>
-          <button class="btn btn-success" @click="saveDO">Simpan</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- DO DETAIL -->
-  <div v-if="doDetail.visible" class="modal d-block" style="background:#0006;">
-    <div class="modal-dialog modal-lg">
-      <div class="modal-content p-4">
-        <h4>{{doList[doDetail.index]?.nomor}} - {{doList[doDetail.index]?.nama}}</h4>
-        <p>NIM: {{doList[doDetail.index]?.nim}}</p>
-        <p>Ekspedisi: {{doList[doDetail.index]?.ekspedisi}}</p>
-
-        <hr/>
-        <h6>Riwayat Progress:</h6>
-        <ul>
-          <li v-for="p in doList[doDetail.index]?.progress">
-            {{formatDateTime(p.time)}} - {{p.keterangan}}
-          </li>
-        </ul>
-
-        <textarea class="form-control mb-2" placeholder="Tambah progress baru"
-                  v-model="doList[doDetail.index].newProgress"></textarea>
-
-        <button class="btn btn-primary mb-2" @click="addProgressForm()">+ Tambah Progress</button>
-
-        <div class="text-end">
-          <button class="btn btn-secondary" @click="doDetail.visible=false">Tutup</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-</div>
-
-<!-- VUE & JS -->
-<script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
-<script src="apps.js"></script>
-
-</body>
+    <!-- VUE JS -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+    <script src="apps.js"></script>
+  </body>
 </html>
-
-
