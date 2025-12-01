@@ -15,51 +15,6 @@ createApp({
   setup() {
 
     // ===========================
-    // LOGIN STATE
-    // ===========================
-    const loggedIn = ref(localStorage.getItem("loggedIn") === "true");
-    const loginError = ref(false);
-
-    const loginForm = reactive({
-      username: "",
-      password: ""
-    });
-
-    function submitLogin() {
-      if (loginForm.username === "admin" && loginForm.password === "admin") {
-        loggedIn.value = true;
-        localStorage.setItem("loggedIn", "true");
-        loginError.value = false;
-      } else {
-        loginError.value = true;
-      }
-    }
-
-    function clearLogin() {
-      loginForm.username = "";
-      loginForm.password = "";
-    }
-
-    function logout() {
-      loggedIn.value = false;
-      localStorage.removeItem("loggedIn");
-      clearLogin();
-    }
-
-    // Keyboard ESC pada login
-    window.addEventListener("keyup", (e) => {
-      if (!loggedIn.value && e.key === "Escape") {
-        clearLogin();
-      }
-    });
-
-    // Watcher (indikator capaian wajib)
-    watch(() => loginForm.username, (val) => {
-      console.log("Watcher aktif — Username berubah menjadi:", val);
-    });
-
-
-    // ===========================
     // TAB SIDE
     // ===========================
     const tab = ref("stok");
@@ -274,26 +229,17 @@ createApp({
       doList.value.splice(i, 1);
     }
 
-
     // ===========================
     // RETURN STATE VUE
     // ===========================
     return {
-      // LOGIN
-      loggedIn, loginError, loginForm, submitLogin, clearLogin, logout,
-
-      // TAB
       tab,
-
-      // STOK
       stockData, displayedStocks, filters, kategoriOptions, upbjjList,
       resetStockFilters, openCreateStock, openEditStock, closeStockForm,
       saveStock, statusText, confirmDeleteStock, deleteStockConfirm, deleteStockConfirmed,
 
-      // TOOLTIP
       tooltip, showNote, hideNote,
 
-      // DO
       doList, doForm, openCreateDO, closeDOForm, saveDO,
       doSearch, filteredDOs, ekspedisiOptions,
       deleteDO, doDetail, openDODetail, addProgressForm,
