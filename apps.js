@@ -1,296 +1,303 @@
-// js/app.js
-import { ref, reactive, computed, watch, onMounted, onBeforeUnmount } from 'https://unpkg.com/vue@3/dist/vue.esm-browser.js';
+/* =========================================================
+   APLIKASI MANAJEMEN STOK & TRACKING DO
+========================================================= */
 
-export function createDOApp() {
-  return {
-    setup() {
-      const tab = ref("stok");
-      const doDetail = reactive({ visible: false, index: null });
+const {
+  createApp,
+  ref,
+  reactive,
+  computed,
+  watch,
+  onMounted,
+} = Vue;
 
-      // Main Data
-      const stockData = ref([]);
-      const doList = ref([]);
-      const upbjjList = ref([]);
-      const ekspedisiOptions = ref([]);
+createApp({
+  setup() {
 
-      // TOOLTIP
-      const tooltip = reactive({ visible: false, index: null, x: 0, y: 0 });
+    // ===========================
+    // LOGIN STATE
+    // ===========================
+    const loggedIn = ref(localStorage.getItem("loggedIn") === "true");
+    const loginError = ref(false);
 
-      // Load JSON (try localStorage first for persistence, fallback to dataBahanAjar.json)
-      function loadInitialData() {
-        const saved = localStorage.getItem('myAppData_v1');
-        if (saved) {
-          try {
-            const j = JSON.parse(saved);
-            stockData.value = j.stocks || [];
-            doList.value = (j.do || []).map((d) => ({
-              ...d,
-              progress: (d.progress || []).map((p) => ({ ...p, time: new Date(p.time) })),
-              newProgress: d.newProgress ?? "",
-              tanggalKirim: d.tanggalKirim ? new Date(d.tanggalKirim) : null
-            }));
-            upbjjList.value = [...new Set(stockData.value.map((s) => s.upbjj))];
-            ekspedisiOptions.value = j.pengirimanList?.map((a) => a.nama) || ["JNE","J&T","Pos Indonesia","SiCepat"];
-            return;
-          } catch(err) {
-            console.warn("Failed parse saved data:", err);
-          }
-        }
+    const loginForm = reactive({
+      username: "",
+      password: ""
+    });
 
-        // fallback to JSON file
-        fetch("./dataBahanAjar.json")
-          .then((r) => r.json())
-          .then((j) => {
-            stockData.value = j.stocks || [];
-            doList.value = (j.do || []).map((d) => ( {
-              ...d,
-              progress: (d.progress || []).map((p) => ({ ...p, time: new Date(p.time) })),
-              newProgress: ""
-            }));
-            upbjjList.value = [...new Set(stockData.value.map((s) => s.upbjj))];
-            ekspedisiOptions.value = j.pengirimanList?.map((a) => a.nama) || ["JNE","J&T","Pos Indonesia","SiCepat"];
-          })
-          .catch((err) => console.error("Gagal load JSON:", err));
+    function submitLogin() {
+      if (loginForm.username === "admin" && loginForm.password === "admin") {
+        loggedIn.value = true;
+        localStorage.setItem("loggedIn", "true");
+        loginError.value = false;
+      } else {
+        loginError.value = true;
       }
+    }
 
-      loadInitialData();
+    function clearLogin() {
+      loginForm.username = "";
+      loginForm.password = "";
+    }
 
-      function statusText(row) {
-        if (!row) return "-";
-        if (row.qty === 0) return "Kosong";
-        if (row.qty < row.safety) return "Hampir Habis";
-        return "Aman";
+    function logout() {
+      loggedIn.value = false;
+      localStorage.removeItem("loggedIn");
+      clearLogin();
+    }
+
+    // Keyboard ESC pada login
+    window.addEventListener("keyup", (e) => {
+      if (!loggedIn.value && e.key === "Escape") {
+        clearLogin();
       }
+    });
 
-      const filters = reactive({ upbjj: "", kategori: "", special: "" });
-      const sortBy = ref("");
+    // Watcher (indikator capaian wajib)
+    watch(() => loginForm.username, (val) => {
+      console.log("Watcher aktif — Username berubah menjadi:", val);
+    });
 
-      const kategoriOptions = computed(() => {
-        return [...new Set(stockData.value.map((s) => s.kategori))];
+
+    // ===========================
+    // TAB SIDE
+    // ===========================
+    const tab = ref("stok");
+
+
+    // ===========================
+    // DATA STOK
+    // ===========================
+    const stockData = ref([]);
+    const upbjjList = ref(["Jakarta", "Bogor", "Bandung", "Semarang", "Surabaya"]);
+    const kategoriOptions = ref(["MK Wajib", "MK Pilihan", "Umum"]);
+
+    const filters = reactive({
+      upbjj: "",
+      kategori: "",
+      special: ""
+    });
+
+    function resetStockFilters() {
+      filters.upbjj = "";
+      filters.kategori = "";
+      filters.special = "";
+    }
+
+    const displayedStocks = computed(() => {
+      return stockData.value.filter(s => {
+        const matchUpbjj = !filters.upbjj || s.upbjj === filters.upbjj;
+        const matchKategori = !filters.kategori || s.kategori === filters.kategori;
+        const matchSpecial =
+          !filters.special ||
+          (filters.special === "belowSafety" && s.qty < s.safety) ||
+          (filters.special === "zero" && s.qty <= 0);
+
+        return matchUpbjj && matchKategori && matchSpecial;
       });
+    });
 
-      const displayedStocks = computed(() => {
-        let arr = stockData.value.slice();
-        if (filters.upbjj) arr = arr.filter((r) => r.upbjj === filters.upbjj);
-        if (filters.kategori) arr = arr.filter((r) => r.kategori === filters.kategori);
-        if (filters.special === "belowSafety") arr = arr.filter((r) => r.qty < r.safety);
-        if (filters.special === "zero") arr = arr.filter((r) => r.qty === 0);
+    function statusText(s) {
+      if (s.qty <= 0) return "Habis";
+      if (s.qty < s.safety) return "Hampir Habis";
+      return "Aman";
+    }
 
-        if (sortBy.value === "judul") arr.sort((a,b) => a.judul.localeCompare(b.judul));
-        if (sortBy.value === "qty_desc") arr.sort((a,b) => b.qty - a.qty);
-        if (sortBy.value === "harga_asc") arr.sort((a,b) => a.harga - b.harga);
 
-        return arr;
-      });
+    // ===========================
+    // FORM STOK
+    // ===========================
+    const stockForm = reactive({
+      visible: false,
+      index: null,
+      data: {}
+    });
 
-      function openDODetail(i) {
-        if (typeof i !== "number" || i < 0 || i >= doList.value.length) return;
-        doDetail.visible = true;
-        doDetail.index = i;
-      }
-
-      // Form stok
-      const stockForm = reactive({ visible: false, editIndex: null, data: {} });
-      const deleteConfirm = reactive({ visible: false, index: null });
-
-      function openCreateStock() {
-        stockForm.visible = true;
-        stockForm.editIndex = null;
-        stockForm.data = { kode: "", judul: "", kategori: "", upbjj: "", lokasiRak: "", harga: 0, qty: 0, safety: 0, catatanHTML: "" };
-      }
-      function openEditStock(idx) {
-        const item = displayedStocks.value[idx];
-        if (!item) return alert("Item tidak ditemukan (index invalid).");
-        const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
-        if (globalIdx === -1) return alert("Data asli tidak ditemukan.");
-        stockForm.editIndex = globalIdx;
-        stockForm.data = { ...stockData.value[globalIdx] };
-        stockForm.visible = true;
-      }
-      function closeStockForm() { stockForm.visible = false; }
-      function saveStock() {
-        const d = stockForm.data;
-        if (!d.kode || !d.judul || !d.upbjj) return alert("Isi Kode, Judul, dan UT-Daerah");
-        if (stockForm.editIndex === null) stockData.value.push({ ...d });
-        else stockData.value[stockForm.editIndex] = { ...d };
-        stockForm.visible = false;
-      }
-      function confirmDeleteStock(idx) { deleteConfirm.visible = true; deleteConfirm.index = idx; }
-      function deleteStockConfirmed() {
-        const item = displayedStocks.value[deleteConfirm.index];
-        if (!item) { deleteConfirm.visible = false; return; }
-        const globalIdx = stockData.value.findIndex((s) => s.kode === item.kode);
-        if (globalIdx !== -1) stockData.value.splice(globalIdx, 1);
-        deleteConfirm.visible = false;
-      }
-      function resetStockFilters() {
-        filters.upbjj = ""; filters.kategori = ""; filters.special = ""; sortBy.value = "";
-      }
-
-      function showNote(idx, event) {
-        tooltip.index = idx;
-        tooltip.visible = true;
-        tooltip.x = (event?.clientX ?? 0) + 12;
-        tooltip.y = (event?.clientY ?? 0) + 12;
-      }
-      function hideNote() { tooltip.visible = false; tooltip.index = null; }
-
-      // DO
-      const doForm = reactive({ visible: false, data: {} });
-      const doSearch = ref("");
-      const deleteDOConfirm = reactive({ visible: false, index: null });
-
-      function genNextDONumber() {
-        const year = new Date().getFullYear();
-        const seq = doList.value.filter((d) => String(d.nomor).includes("DO" + year)).length + 1;
-        return `DO${year}-${String(seq).padStart(3,"0")}`;
-      }
-
-      function openCreateDO() {
-        doForm.visible = true;
-        doForm.data = {
-          nomor: genNextDONumber(),
-          nim: "",
-          nama: "",
-          ekspedisi: "",
-          tanggalKirimRaw: "",
-          totalHarga: 0,
-          progress: [],
-          newProgress: ""
-        };
-      }
-      function closeDOForm() { doForm.visible = false; }
-      function saveDO() {
-        const d = doForm.data;
-        if (!d.nim || !d.nama || !d.ekspedisi) return alert("Lengkapi semua field");
-        d.tanggalKirim = d.tanggalKirimRaw ? new Date(d.tanggalKirimRaw) : new Date();
-        d.progress = d.progress || [];
-        d.newProgress = d.newProgress ?? "";
-        doList.value.push({ ...d });
-        doForm.visible = false;
-      }
-
-      const filteredDOs = computed(() => {
-        const q = (doSearch.value || "").toLowerCase();
-        if (!q) return doList.value;
-        return doList.value.filter((d) => (d.nomor||"").toLowerCase().includes(q) || (d.nim||"").toLowerCase().includes(q));
-      });
-
-      // NOTE: function name standardized to addProgressForm (capital F)
-      function addProgressForm(i) {
-        if (typeof i === "number") {
-          const d = doList.value[i];
-          if (!d) return alert("DO tidak ditemukan.");
-          if (!d.newProgress) return;
-          d.progress = d.progress || [];
-          d.progress.push({ time: new Date(), keterangan: d.newProgress });
-          d.newProgress = "";
-          return;
-        }
-        if (doForm.visible && doForm.data) {
-          const d = doForm.data;
-          if (!d.newProgress) return;
-          d.progress = d.progress || [];
-          d.progress.push({ time: new Date(), keterangan: d.newProgress });
-          d.newProgress = "";
-        }
-      }
-
-      function confirmDeleteDO(i) { deleteDOConfirm.visible = true; deleteDOConfirm.index = i; }
-      function deleteDOConfirmed() {
-        if (deleteDOConfirm.index == null) return;
-        doList.value.splice(deleteDOConfirm.index, 1);
-        deleteDOConfirm.visible = false;
-        deleteDOConfirm.index = null;
-      }
-
-      // Keyboard handler
-      function handleKey(e) {
-        if (e.key === "Enter") {
-          if (stockForm.visible) saveStock();
-          if (doForm.visible) saveDO();
-          // Jika modal detail DO terbuka, tambahkan progress saat fokus pada input
-        }
-        if (e.key === "Escape") {
-          if (stockForm.visible) closeStockForm();
-          if (doForm.visible) closeDOForm();
-          if (deleteConfirm.visible) deleteConfirm.visible = false;
-          if (deleteDOConfirm.visible) deleteDOConfirm.visible = false;
-          if (doDetail.visible) { doDetail.visible = false; doDetail.index = null; }
-        }
-      }
-
-      onMounted(() => {
-        window.addEventListener("keydown", handleKey);
-      });
-
-      onBeforeUnmount(() => {
-        window.removeEventListener("keydown", handleKey);
-      });
-
-      // WATCHERS: contoh watcher wajib yang diminta
-      // 1) watch doList (deep) untuk persist ke localStorage
-      watch(doList, (newVal, oldVal) => {
-        try {
-          // simplify date objects to ISO so JSON can serialize
-          const serializable = {
-            stocks: stockData.value,
-            do: newVal.map(d => ({
-              ...d,
-              progress: (d.progress || []).map(p => ({ ...p, time: p.time ? new Date(p.time).toISOString() : null })),
-              tanggalKirim: d.tanggalKirim ? new Date(d.tanggalKirim).toISOString() : null
-            }))
-          };
-          localStorage.setItem('myAppData_v1', JSON.stringify(serializable));
-          // console.log("doList changed — saved to localStorage.");
-        } catch (err) {
-          console.error("Failed to persist doList:", err);
-        }
-      }, { deep: true });
-
-      // 2) optional: watch filters to auto log or perform action
-      watch(filters, (n) => {
-        // contoh side effect: reset sort saat ganti filter
-        sortBy.value = "";
-      }, { deep: true });
-
-      // Expose to template
-      return {
-        tab,
-        stockData,
-        upbjjList,
-        ekspedisiOptions,
-        filters,
-        kategoriOptions,
-        displayedStocks,
-        stockForm,
-        deleteConfirm,
-        doDetail,
-        doList,
-        doForm,
-        doSearch,
-        filteredDOs,
-        tooltip,
-        formatCurrency: (v) => "Rp " + Number(v).toLocaleString("id-ID"),
-        formatDate: (d) => (d ? new Date(d).toLocaleDateString("id-ID") : "-"),
-        formatDateTime: (d) => (d ? new Date(d).toLocaleString("id-ID") : "-"),
-        openCreateStock,
-        openEditStock,
-        closeStockForm,
-        saveStock,
-        confirmDeleteStock,
-        deleteStockConfirmed,
-        openCreateDO,
-        closeDOForm,
-        saveDO,
-        addProgressForm,  // <-- pastikan ini tersedia (case-sensitive)
-        confirmDeleteDO,
-        deleteDOConfirmed,
-        statusText,
-        resetStockFilters,
-        showNote,
-        hideNote,
+    function openCreateStock() {
+      stockForm.visible = true;
+      stockForm.index = null;
+      stockForm.data = {
+        kode: "",
+        judul: "",
+        upbjj: "",
+        kategori: "",
+        qty: 0,
+        safety: 0,
+        catatanHTML: ""
       };
     }
-  };
-}
+
+    function openEditStock(i) {
+      stockForm.visible = true;
+      stockForm.index = i;
+      stockForm.data = { ...stockData.value[i] };
+    }
+
+    function closeStockForm() {
+      stockForm.visible = false;
+    }
+
+    function saveStock() {
+      if (stockForm.index === null) {
+        stockData.value.push(stockForm.data);
+      } else {
+        stockData.value[stockForm.index] = stockForm.data;
+      }
+      stockForm.visible = false;
+    }
+
+    const deleteStockConfirm = reactive({
+      visible: false,
+      index: null
+    });
+
+    function confirmDeleteStock(i) {
+      deleteStockConfirm.visible = true;
+      deleteStockConfirm.index = i;
+    }
+
+    function deleteStockConfirmed() {
+      if (deleteStockConfirm.index == null) return;
+      stockData.value.splice(deleteStockConfirm.index, 1);
+      deleteStockConfirm.visible = false;
+      deleteStockConfirm.index = null;
+    }
+
+
+    // ===========================
+    // TOOLTIP CATATAN
+    // ===========================
+    const tooltip = reactive({ visible: false, index: null, x: 0, y: 0 });
+
+    function showNote(i, e) {
+      tooltip.visible = true;
+      tooltip.index = i;
+      tooltip.x = e.pageX + 15;
+      tooltip.y = e.pageY + 15;
+    }
+
+    function hideNote() {
+      tooltip.visible = false;
+    }
+
+
+    // ===========================
+    // DATA DO
+    // ===========================
+    const doList = ref([]);
+    const doSearch = ref("");
+    const ekspedisiOptions = ref(["JNE", "JNT", "SiCepat", "Pos Indonesia", "AnterAja"]);
+
+    const filteredDOs = computed(() => {
+      const key = doSearch.value.toLowerCase();
+      return doList.value.filter(d =>
+        d.nim.toLowerCase().includes(key) ||
+        d.nama.toLowerCase().includes(key) ||
+        d.nomor.toLowerCase().includes(key)
+      );
+    });
+
+
+    // ===========================
+    // DO FORM
+    // ===========================
+    const doForm = reactive({
+      visible: false,
+      data: {}
+    });
+
+    function createDONumber() {
+      return "DO-" + Date.now();
+    }
+
+    function openCreateDO() {
+      doForm.visible = true;
+      doForm.data = {
+        nomor: createDONumber(),
+        nim: "",
+        nama: "",
+        ekspedisi: "",
+        tanggalKirimRaw: "",
+        progress: []
+      };
+    }
+
+    function closeDOForm() {
+      doForm.visible = false;
+    }
+
+    function saveDO() {
+      const formatted = {
+        ...doForm.data,
+        tanggalKirim: new Date(doForm.data.tanggalKirimRaw).toISOString()
+      };
+      doList.value.push(formatted);
+      doForm.visible = false;
+    }
+
+
+    // ===========================
+    // DO DETAIL
+    // ===========================
+    const doDetail = reactive({
+      visible: false,
+      index: null
+    });
+
+    function openDODetail(i) {
+      doDetail.visible = true;
+      doDetail.index = i;
+    }
+
+    function addProgressForm() {
+      if (!doDetail.index && doDetail.index !== 0) return;
+      const item = doList.value[doDetail.index];
+      if (!item.newProgress || item.newProgress.trim() === "") return;
+
+      item.progress.push({
+        time: new Date().toISOString(),
+        keterangan: item.newProgress
+      });
+
+      item.newProgress = "";
+    }
+
+    function formatDate(d) {
+      return new Date(d).toLocaleDateString("id-ID");
+    }
+
+    function formatDateTime(d) {
+      return new Date(d).toLocaleString("id-ID");
+    }
+
+    function deleteDO(i) {
+      doList.value.splice(i, 1);
+    }
+
+
+    // ===========================
+    // RETURN STATE VUE
+    // ===========================
+    return {
+      // LOGIN
+      loggedIn, loginError, loginForm, submitLogin, clearLogin, logout,
+
+      // TAB
+      tab,
+
+      // STOK
+      stockData, displayedStocks, filters, kategoriOptions, upbjjList,
+      resetStockFilters, openCreateStock, openEditStock, closeStockForm,
+      saveStock, statusText, confirmDeleteStock, deleteStockConfirm, deleteStockConfirmed,
+
+      // TOOLTIP
+      tooltip, showNote, hideNote,
+
+      // DO
+      doList, doForm, openCreateDO, closeDOForm, saveDO,
+      doSearch, filteredDOs, ekspedisiOptions,
+      deleteDO, doDetail, openDODetail, addProgressForm,
+      formatDate, formatDateTime,
+    };
+  }
+}).mount("#app");
